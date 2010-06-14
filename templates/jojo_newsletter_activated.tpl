@@ -1,0 +1,1 @@
+<p>Your subscription has been activated.</p>

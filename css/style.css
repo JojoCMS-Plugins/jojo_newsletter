@@ -1,0 +1,19 @@
+.subscribe_sidebar label {
+  display: block;
+  width: 80px;
+  float: left;
+  text-align: right;
+}
+
+.subscribe_sidebar input {
+  display: block;
+  width: 120px;
+  float: left;
+  margin-bottom: 2px;
+}
+
+.subscribe_sidebar input.button {
+  float: none;
+  width: auto;
+  margin: 0 auto;
+}
