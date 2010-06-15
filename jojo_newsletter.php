@@ -111,8 +111,8 @@ class Jojo_Plugin_jojo_newsletter extends Jojo_Plugin
             
             $result = $subscriber->activate($actioncode);
             if ($result) {
-                    $content['title']     = 'Unsubscribe successful';
-                    $content['seotitle']  = 'Unsubscribe successful';
+                    $content['title']     = 'Subscription activated';
+                    $content['seotitle']  = 'Subscription activated';
                     $content['content']   = $smarty->fetch('jojo_newsletter_activated.tpl');
                     return $content;
                 } else {
@@ -152,6 +152,10 @@ class Jojo_Plugin_jojo_newsletter extends Jojo_Plugin
             }
             $subscriber = new newsletter_subscriber($_USERID);
             if ($subscriber->is_subscribed($groupid)) return false; //don't show the form to logged-in users who have already subscribed
+            
+            /* assign the user data to Smarty */
+            $user = Jojo::selectRow("SELECT userid, us_firstname, us_lastname, us_email FROM {user} WHERE userid=? LIMIT 1", $_USERID);
+            $smarty->assign('user', $user);
         }
         
         $smarty->assign('newsletter_prefix', self::getPrefix());

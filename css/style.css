@@ -3,6 +3,7 @@
   width: 80px;
   float: left;
   text-align: right;
+  clear: left;
 }
 
 .subscribe_sidebar input {
