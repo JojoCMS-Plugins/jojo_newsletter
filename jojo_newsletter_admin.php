@@ -21,6 +21,13 @@ class jojo_plugin_jojo_newsletter_admin extends JOJO_Plugin
         $messageid = Jojo::getFormData('messageid', false);
         $preview   = Jojo::getFormData('preview',   false);
        
+        /* retrieve CSS from newsletter.css */
+        $css = '';
+        foreach (JOjo::listPlugins('css/newsletter.css') as $pluginfile) {
+            $css .= file_get_contents($pluginfile);
+        }
+        $smarty->assign('css', $css);
+       
         //exit;
         /* preview */
         if ($preview) {
@@ -33,6 +40,8 @@ class jojo_plugin_jojo_newsletter_admin extends JOJO_Plugin
             $html = $message->render('html');
             $smarty->assign('messageid', $messageid);
             $smarty->assign('html', $html);
+
+            
             $content['content'] = $smarty->fetch('jojo_newsletter_admin_preview.tpl');
             echo $content['content'];
             exit;
@@ -63,20 +72,25 @@ class jojo_plugin_jojo_newsletter_admin extends JOJO_Plugin
             /* get logged-in user's email address */
             $user = Jojo::selectRow("SELECT us_email, us_firstname FROM {user} WHERE userid=?", $_USERID);
             
+            $test_firstname      = Jojo::getFormData('test_firstname', $user['us_firstname']);
+            $test_email          = Jojo::getFormData('test_email',     $user['us_email']);
+            
             $message = new newsletter_message($messageid);
-            $message->test($user['us_email'], $user['us_firstname']);
+            $message->test($test_email, $test_firstname);
             Jojo::redirect(_SITEURL.'/'._ADMIN.'/newsletters/edit/'.$message->messageid.'/');
         }
         
         /* new / edit */
         if (($action == 'new') || ($action == 'edit')) {
+            $user = Jojo::selectRow("SELECT us_email, us_firstname FROM {user} WHERE userid=?", $_USERID); //we need this for prepopulating the test email address
+            $smarty->assign('user', $user);
             $messageid   = Jojo::getFormData('data', false);
             $message = new newsletter_message($messageid);
             $groups = Jojo::selectQuery("SELECT * FROM {newsletter_group} ORDER BY name");
             $smarty->assign('groups', $groups);
-            
             $smarty->assign('message', $message->asArray());
             $content['content'] = $smarty->fetch('jojo_newsletter_admin_edit.tpl');
+            $content['head']    = $smarty->fetch('jojo_newsletter_admin_edit_head.tpl');
             return $content;
         }
         

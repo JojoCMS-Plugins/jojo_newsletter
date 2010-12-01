@@ -30,7 +30,7 @@
     <!-- Body HTML -->
     <tr>
       <td>Body HTML</td>
-      <td><textarea name="bodyhtml" rows="15" cols="100">{$message.bodyhtml}</textarea></td>
+      <td><textarea name="bodyhtml" id="bodyhtml" rows="15" cols="100">{$message.bodyhtml}</textarea></td>
     </tr>
     
     <!-- Body Plain Text -->
@@ -77,7 +77,18 @@
   </table>
   <input type="submit" name="save" value="Save" />
   <input type="submit" name="preview" value="Preview" />
-  <input type="submit" name="test" value="Test" title="Send a one-off test message to {$foo}" />
+  <br />
+  
+  First name: <input type="text" size="50" name="test_firstname" value="{$user.us_firstname}" />
+  Email: <input type="text" size="50" name="test_email" value="{$user.us_email}" />
+  <input type="submit" name="test" value="Test" title="Send a one-off test message" />
   {if $message.name && $message.groupid && $message.bodyhtml && $message.subject}<input type="submit" name="send" value="Send" />{/if}
 </form>
+
+<script type="text/javascript">
+/*<![CDATA[*/
+    
+/*]]>*/
+</script>
+
 {include file="admin/footer.tpl"}

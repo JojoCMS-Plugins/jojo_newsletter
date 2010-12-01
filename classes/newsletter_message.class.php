@@ -75,13 +75,14 @@ class newsletter_message {
         }
     }
     
-    function render($format='html', $subscriberid=false)
+    function render($format='html', $subscriberid=false, $vars=false)
     {
         global $smarty;
         $message = $this->asArray();
+        if ($vars === false) $vars = array();
         
         if (!$subscriberid) {
-            $firstname = 'Test';
+            $firstname = (!empty($vars['first_name'])) ? $vars['first_name'] : 'Test';
             $unsubscribe_link = _SITEURL.'/'.Jojo_Plugin_jojo_newsletter::getPrefix().'/unsubscribe/xxxxxxxxxx/';
         } else {
             $subscriber = new newsletter_subscriber(false, false, $subscriberid);
@@ -92,8 +93,6 @@ class newsletter_message {
         /* replace [[firstname]] variable */
         $message['bodytext'] = str_replace('[[firstname]]', $firstname, $message['bodytext']);
         $message['bodyhtml'] = str_replace('[[firstname]]', $firstname, $message['bodyhtml']);
-        
-        
         
         $smarty->assign('message', $message);
         $smarty->assign('unsubscribe_link', $unsubscribe_link);
@@ -112,6 +111,16 @@ class newsletter_message {
         
         $rendered = $smarty->fetch($template);
         
+        if ($format == 'html') {
+            /* retrieve CSS from newsletter.css */
+            $css = '';
+            foreach (JOjo::listPlugins('css/newsletter.css') as $pluginfile) {
+                $css .= file_get_contents($pluginfile);
+            }
+            $smarty->assign('css', $css);
+            $rendered = '<style tyle="text/css">'.$css.'</style>'."\n\n".$rendered;
+        }
+        
         /* make images absolute */
         $rendered = preg_replace_callback('/(<img .*src *= *")(.*?)(")/', create_function('$matches', 'if (strpos($matches[2], "http://")!==false) {return $matches[0];} else {return $matches[1]._SITEURL."/".$matches[2].$matches[3];}'), $rendered);
         $rendered = preg_replace_callback('/(<img .*src *= *\')(.*?)(\')/', create_function('$matches', 'if (strpos($matches[2], "http://")!==false) {return $matches[0];} else {return $matches[1]._SITEURL."/".$matches[2].$matches[3];}'), $rendered);
@@ -126,11 +135,18 @@ class newsletter_message {
     
     function queue()
     {
+        /* include subscriber class */
+        foreach (Jojo::listPlugins('classes/newsletter_subscriber.class.php') as $pluginfile) {
+            require_once($pluginfile);
+            break;
+        }
+        
         if (empty($this->data['groupid'])) return false;
         $num_queued = 0;
         $subscriptions = Jojo::selectQuery("SELECT * FROM {newsletter_subscription} WHERE active='yes' AND groupid=?", $this->data['groupid']);
         foreach ($subscriptions as $subscription) {
             $subscriber = new newsletter_subscriber(false, false, $subscription['subscriberid']);
+            if (empty($subscriber->email)) continue; //can't queue if email is empty for some reason
             $data = Jojo::selectRow("SELECT * FROM {newsletter_queue} WHERE subscriberid=? AND messageid=?", array($subscriber->subscriberid, $this->messageid));//don't send the same message twice
             if (!count($data)) {
                 Jojo::insertQuery("INSERT INTO {newsletter_queue} SET subscriberid=?, messageid=?, email=?, queued=?, status='queued'", array($subscriber->subscriberid, $this->messageid, $subscriber->email, time()));
@@ -149,12 +165,13 @@ class newsletter_message {
         $to_email   = $email;
         $from_name  = $this->data['from'];
         $from_email = Jojo::getOption('newsletter_noreply_address', _WEBMASTERADDRESS);
-        $html       = $this->render('html', false);
+        $html       = $this->render('html', false, array('first_name' => $to_name));
         $text       = $this->render('text', false);
         $subject    = $this->data['subject'];
         
         $this->mail = new htmlMimeMail();
-        $html = preg_replace_callback('/(<img .*src *= *")(.*?)(")/', array(&$this, 'i_am_a_regex_callback'), $html);
+        //$html = preg_replace_callback('/(<img .*src *= *")(.*?)(")/', array(&$this, 'i_am_a_regex_callback'), $html);
+        $html = preg_replace_callback('/(<img .*?src *?= *?")([^"]+?)(")/', array(&$this, 'i_am_a_regex_callback'), $html);
     	
         $this->mail->setHtml($html, $text);
         $this->mail->setFrom('"'.$from_name.'" <'.$from_email.'>');
@@ -200,7 +217,8 @@ class newsletter_message {
         $this->mail = new htmlMimeMail();
         
         /* embed images */
-        $html = preg_replace_callback('/(<img .*src *= *")(.*?)(")/', array(&$this, 'i_am_a_regex_callback'), $html);
+        //$html = preg_replace_callback('/(<img .*src *= *")(.*?)(")/', array(&$this, 'i_am_a_regex_callback'), $html);
+        $html = preg_replace_callback('/(<img .*?src *?= *?")([^"]+?)(")/', array(&$this, 'i_am_a_regex_callback'), $html);
     	
         $this->mail->setHtml($html, $text);
         $this->mail->setFrom('"'.$from_name.'" <'.$from_email.'>');
