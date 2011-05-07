@@ -132,7 +132,7 @@ class newsletter_subscriber {
     
     function is_subscribed($groupid)
     {
-        $subscription = Jojo::selectRow("SELECT * FROM newsletter_subscription WHERE active='yes' AND groupid=? AND subscriberid=?", array($groupid, $this->subscriberid));
+        $subscription = Jojo::selectRow("SELECT * FROM {newsletter_subscription} WHERE active='yes' AND groupid=? AND subscriberid=?", array($groupid, $this->subscriberid));
         if (count($subscription)) return true;
         return false;
     }
